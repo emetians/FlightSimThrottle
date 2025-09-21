@@ -11,7 +11,14 @@
 #define PIN_SWITCH_RIGHT 6
 #define PIN_BUTTON_THROTTLE 7
 
+volatile byte aFlag = 0; 
+volatile byte bFlag = 0; 
+volatile byte encoderPos = 0; 
+volatile byte oldEncPos = 0;
+volatile byte reading = 0;
 
+bool lastA;
+int test = 0;
 void setup() {
   // put your setup code here, to run once:
   pinMode(PIN_AXIS_THROTTLE_R, INPUT);
@@ -24,6 +31,7 @@ void setup() {
   pinMode(PIN_SWITCH_RIGHT, INPUT_PULLUP);
   pinMode(PIN_BUTTON_THROTTLE, INPUT_PULLUP);
   Serial.begin(9600);
+  lastA = digitalRead(PIN_ENC_A);
 }
 
 void loop() {
@@ -33,15 +41,39 @@ void loop() {
   int spVal = 1023 - analogRead(PIN_AXIS_SPOILER); // max: 645
   bool butEncSt = digitalRead(PIN_BUTTON_ENC); // when pressed 0
   bool encASt = digitalRead(PIN_ENC_A);
-  bool encBSt = digitalRead(PIN_ENC_A);
+  bool encBSt = digitalRead(PIN_ENC_A);;
   bool swLeftSt = digitalRead(PIN_SWITCH_LEFT); // when up 1
   bool swRightSt = digitalRead(PIN_SWITCH_RIGHT); // when up 1
   bool butThSt = digitalRead(PIN_BUTTON_THROTTLE); // when pressed 0
 
+  bool currentA = digitalRead(PIN_ENC_A);
+  bool down = false;
+  bool up = false;
+  
+  
+  // Detect change on A
+  if (currentA != lastA) {
+    if (digitalRead(PIN_ENC_B) != currentA) {
+      up = false;
+      down = true;
+    } else {
+      up = true;
+      down = false;
+    }
+  }
+  lastA = currentA;
+
+  if (up && !down) {
+    test++;
+  }
+  if (down && !up) {
+    test--;
+  }
+  
   char message[1000];
-  sprintf(message, "RT: %d, LT: %d, SP: %d, encBt: %d, encA: %d, encB:%d, LSw: %d, RSw: %d, thBT: %d\n",
-                    thRightVal, thLeftVal, spVal, butEncSt, encASt,
-                    encBSt, swLeftSt, swRightSt, butThSt);
+  sprintf(message, "RT: %d, LT: %d, SP: %d, encBt: %d, up: %d, down:%d, LSw: %d, RSw: %d, thBT: %d, test: %d\n",
+                    thRightVal, thLeftVal, spVal, butEncSt, up,
+                    down, swLeftSt, swRightSt, butThSt, test);
   Serial.print(message);
-  delay(500);
+  delay(5);
 }
